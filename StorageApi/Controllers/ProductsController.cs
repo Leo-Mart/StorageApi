@@ -25,6 +25,22 @@ namespace StorageApi.Controllers
             return await _context.Product.Select(p => p.ToProductDto()).ToListAsync();
         }
 
+        [HttpGet("stats")]
+        public async Task<ActionResult> GetStats()
+        {
+            var allProducts = await _context.Product.Select(p => p.ToProductDto()).ToListAsync();
+            var totalCountOfProducts = allProducts.Count();
+            int totalInventoryValue = allProducts.Sum(p => p.InventoryValue);
+            var averagePrice = totalInventoryValue / totalCountOfProducts;
+            var response = new StatsDto
+            {
+                TotalCount = totalCountOfProducts,
+                TotalInventoryValue = totalInventoryValue,
+                AvergePrice = averagePrice
+            };
+            return Ok(response);
+        }
+
         // GET: api/Products/5
         [HttpGet("{id}")]
         public async Task<ActionResult<ProductDto>> GetProduct(int id)
