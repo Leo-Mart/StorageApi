@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.IdentityModel.Tokens;
 using StorageApi.Data;
 using StorageApi.DTOs;
 using StorageApi.Mappers;
@@ -20,9 +21,35 @@ namespace StorageApi.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProduct()
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProduct(string? name, string? category)
         {
-            return await _context.Product.Select(p => p.ToProductDto()).ToListAsync();
+            var products = _context.Product as IQueryable<Product>;
+
+            if (!string.IsNullOrWhiteSpace(name))
+            {
+                name = name.Trim();
+                products = products.Where(p => p.Name.ToLower() == name.ToLower());
+            }
+
+            if (!string.IsNullOrWhiteSpace(category))
+            {
+                category = category.Trim();
+                products = products.Where(p => p.Category.ToLower() == category.ToLower());
+            }
+
+            if (!string.IsNullOrWhiteSpace(category) && !string.IsNullOrWhiteSpace(name))
+            {
+                category = category.Trim();
+                products = products.Where(p => p.Category.ToLower() == category.ToLower() && p.Name.ToLower() == name.ToLower());
+            }
+
+            if (products.IsNullOrEmpty())
+            {
+                return NotFound();
+            }
+
+            var prodsToReturn = await products.OrderBy(p => p.Name).ToListAsync();
+            return Ok(prodsToReturn);
         }
 
         [HttpGet("stats")]
