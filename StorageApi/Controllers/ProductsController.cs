@@ -1,6 +1,8 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using StorageApi.Data;
+using StorageApi.DTOs;
+using StorageApi.Mappers;
 using StorageApi.Models;
 
 namespace StorageApi.Controllers
@@ -18,14 +20,14 @@ namespace StorageApi.Controllers
 
         // GET: api/Products
         [HttpGet]
-        public async Task<ActionResult<IEnumerable<Product>>> GetProduct()
+        public async Task<ActionResult<IEnumerable<ProductDto>>> GetProduct()
         {
-            return await _context.Product.ToListAsync();
+            return await _context.Product.Select(p => p.ToProductDto()).ToListAsync();
         }
 
         // GET: api/Products/5
         [HttpGet("{id}")]
-        public async Task<ActionResult<Product>> GetProduct(int id)
+        public async Task<ActionResult<ProductDto>> GetProduct(int id)
         {
             var product = await _context.Product.FindAsync(id);
 
@@ -34,7 +36,7 @@ namespace StorageApi.Controllers
                 return NotFound();
             }
 
-            return product;
+            return product.ToProductDto();
         }
 
         // PUT: api/Products/5
@@ -71,12 +73,22 @@ namespace StorageApi.Controllers
         // POST: api/Products
         // To protect from overposting attacks, see https://go.microsoft.com/fwlink/?linkid=2123754
         [HttpPost]
-        public async Task<ActionResult<Product>> PostProduct(Product product)
+        public async Task<ActionResult<Product>> PostProduct(CreateProductDto product)
         {
-            _context.Product.Add(product);
+            var prodToSave = new Product
+            {
+                Name = product.Name,
+                Price = product.Price,
+                Category = product.Category,
+                Shelf = product.Shelf,
+                Count = product.Count,
+                Description = product.Description
+            };
+
+            _context.Product.Add(prodToSave);
             await _context.SaveChangesAsync();
 
-            return CreatedAtAction("GetProduct", new { id = product.Id }, product);
+            return CreatedAtAction("GetProduct", new { id = prodToSave.Id }, product);
         }
 
         // DELETE: api/Products/5
